@@ -222,7 +222,6 @@ func (r *PDFRenderer) drawImageNode(i ImageNode, parentNode *LayoutNode) error {
 		return err
 	}
 
-	// TODO: get X and Y based on alignment...
 	x := parentNode.X
 	y := parentNode.Y
 
@@ -283,9 +282,6 @@ func (r *PDFRenderer) printTextLine(line string, t TextNode) {
 	r.pdf.SetX(startX)
 	r.pdf.SetXY(startX, startY+t.getLineHeightMM())
 }
-
-// images:
-// TODO: make sure that you use RegisterImageOptionsReader() to read
 
 // Save outputs the created pdf to a given io.Writer
 func (r *PDFRenderer) Save(renderResult interface{}, writer io.Writer) error {

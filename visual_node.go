@@ -178,9 +178,36 @@ func (n *ImageNode) getDrawRect(parentRect Rect) (Rect, error) {
 				scaleFactor = parentRect.width / float64(longestSide)
 			}
 
-			return Rect{
+			tempRect := Rect{
 				width:  float64(w) * scaleFactor,
 				height: float64(h) * scaleFactor,
+			}
+
+			// now that we have scaled the image down correctly on the longest
+			// side, we need to see if we need to scale it down any further on
+			// the other side.  The above rect will be correct in situtations
+			// where two rects are in entirely different orentiations (i.e. w:
+			// 10 h: 20 vs w: 20 h: 10), but will not handle the possibility of
+			// two rects that are in the same orientation but where one is more
+			// "extreme" than the other, e.g. (w: 10 h: 20 vs w: 10 h: 30)
+
+			needsAdditionalScaling := false
+
+			if tempRect.width > parentRect.width {
+				scaleFactor = parentRect.width / tempRect.width
+				needsAdditionalScaling = true
+			} else if tempRect.height > parentRect.height {
+				needsAdditionalScaling = true
+				scaleFactor = parentRect.height / tempRect.height
+			}
+
+			if needsAdditionalScaling == false {
+				return tempRect, nil
+			}
+
+			return Rect{
+				width:  float64(tempRect.width) * scaleFactor,
+				height: float64(tempRect.height) * scaleFactor,
 			}, nil
 
 		}

@@ -69,7 +69,7 @@ func DocSpecExample() {
 					docspec.LayoutNodeProps{
 						Border:             docspec.NewSingletonBooleanQuad(true),
 						Padding:            docspec.NewSingletonSizeQuad(5.0),
-						Width:              docspec.WidthPercentage(75),
+						Width:              docspec.WidthFill(),
 						Height:             docspec.StaticSize(50),
 						Margin:             docspec.NewSizeQuad(5, 0, 5, 0),
 						ChildFlowDirection: docspec.FlowHorizontal,
@@ -95,7 +95,7 @@ func DocSpecExample() {
 									docspec.ImageNode{
 										Src:           "./example/example_image.jpg",
 										RatioBehavior: docspec.ImagePreserve,
-										Alignment:     docspec.ImageStart,
+										Alignment:     docspec.ImageCenter,
 									},
 								)
 							},
