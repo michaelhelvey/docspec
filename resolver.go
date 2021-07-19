@@ -238,18 +238,24 @@ func resolveNodeRectPositions(d *DocumentBuilder) error {
 	}
 
 	for idx, node := range d.nodes {
-		currentPage.addNode(node)
+		fmt.Printf("new node: x: %f, h: %f\n", cursor.x, cursor.y)
 		node.X = cursor.x + node.Margin.left
-		node.Y = cursor.y + node.Margin.right
+		node.Y = cursor.y + node.Margin.top
+		currentPage.addNode(node)
 
 		nextCursor := cursor
+		// prepare nextCursor position so that it's at the top left corner of
+		// the parent node's RENDER rect, not the bounding rect
+		nextCursor.x += node.Margin.left
+		nextCursor.y += node.Margin.top
 		err := recursiveSetPositions(node, &nextCursor)
 
 		if err != nil {
 			return err
 		}
 
-		nodeHeight, err := node.Height.await()
+		nodeBoundingRect, err := node.getBoundingRect()
+		nodeHeight := nodeBoundingRect.height
 
 		if err != nil {
 			return err
