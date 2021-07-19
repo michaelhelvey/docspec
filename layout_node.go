@@ -40,6 +40,19 @@ type LayoutNode struct {
 	ChildFlowDirection childFlowDirection
 }
 
+// Clone returns a pointer to a copy of the original node tree, with all
+// child nodes recursively cloned.
+func (n *LayoutNode) Clone() *LayoutNode {
+	root := *n
+	root.Children = make([]*LayoutNode, 0)
+
+	for _, child := range n.Children {
+		root.addChild(child.Clone())
+	}
+
+	return &root
+}
+
 func (n *LayoutNode) addChild(node *LayoutNode) {
 	n.Children = append(n.Children, node)
 }
