@@ -70,6 +70,9 @@ type TextNode struct {
 
 // getLineHeightMM returns the line height in mm for a given text node
 func (n *TextNode) getLineHeightMM() float64 {
+	if n.LineHeight == 0 {
+		n.LineHeight = 1.0
+	}
 	conversionFactor := 0.3528
 	return (n.FontSize * conversionFactor) * n.LineHeight
 }
