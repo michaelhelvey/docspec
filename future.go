@@ -88,6 +88,21 @@ func (f *Future) isKnown() bool {
 // ------------------- common future definitions --------------------------
 
 func heightAsChildren(node *LayoutNode, params interface{}) (Size, error) {
+	if node.ChildFlowDirection == FlowHorizontal {
+		// get the height of the tallest child
+		tallest := 0.0
+		for _, child := range node.Children {
+			height, err := child.Height.await()
+			if err != nil {
+				return emptySize, err
+			}
+			if height > tallest {
+				tallest = height
+			}
+		}
+		return tallest, nil
+	}
+	// get the sum of the heights of the children
 	result := emptySize
 	for _, child := range node.Children {
 		height, err := child.Height.await()
@@ -101,6 +116,22 @@ func heightAsChildren(node *LayoutNode, params interface{}) (Size, error) {
 }
 
 func widthAsChildren(node *LayoutNode, params interface{}) (Size, error) {
+	if node.ChildFlowDirection == FlowVertical {
+		// get the width of the widest chil
+		widest := 0.0
+		for _, child := range node.Children {
+			width, err := child.Width.await()
+			if err != nil {
+				return emptySize, err
+			}
+			if width > widest {
+				widest = width
+			}
+		}
+
+		return widest, nil
+	}
+	// sums the widths of the children
 	result := emptySize
 	for _, child := range node.Children {
 		width, err := child.Width.await()
