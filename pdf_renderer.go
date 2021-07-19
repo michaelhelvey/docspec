@@ -254,6 +254,14 @@ func (r *PDFRenderer) drawTextNode(t TextNode, parentNode *LayoutNode) error {
 
 	lines := r.SplitText(targetDrawRect, t)
 
+	// TODO(#3): we need a way to split request that the lines start at a
+	// particular point within the text box.  For example, given that the text
+	// is in a "box", we should be able to tell the parent that the children
+	// should have a particular alignment.  Basically, the wrapping text node
+	// is always the full size of the parent draw rect, when in in reality it
+	// should always be width fill and height = children, after we support
+	// heightAsChildren on text nodes.
+
 	if t.OverflowBehavior == overflowTruncate {
 		r.printTextLine(lines[0], t)
 	} else {
@@ -338,8 +346,8 @@ func (r *PDFRenderer) SplitText(targetRect Rect, textNode TextNode) []string {
 		splitStr := textToGo[:idealCharCount]
 		strLen := len(splitStr)
 		// if the last char is not a word delimiter, truncate the string by a character
-		for splitStr[len(splitStr)-1] != wordDelimiter {
-			splitStr = splitStr[:strLen-2]
+		for (strLen-1 != 0) && splitStr[strLen-1] != wordDelimiter {
+			splitStr = splitStr[:strLen-1]
 			strLen--
 		}
 
