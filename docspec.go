@@ -47,6 +47,11 @@ type DocumentRenderer interface {
 	// layout engine can communicate with the renderer to prepare text node's
 	// with different text overflow behaviors.
 	SplitText(targetRect Rect, textNode TextNode) []string
+
+	// GetTextWidth gets the width that a piece of text would have if it was
+	// not split.  This is so that a text node can have an inherent width and
+	// height can be used in a Height/WidthAsChildren definition.
+	GetInherentTextRect(textNode TextNode) Rect
 }
 
 // -----------------------  Simple Types --------------------------
@@ -100,8 +105,21 @@ func (d *DocumentBuilder) RenderToWriter(writer io.Writer) error {
 // coordinates for all rects in the tree.
 func (d *DocumentBuilder) CreateDocumentTree(nodeList []*LayoutNode) error {
 	d.nodes = nodeList
+	// before we resolve the node rect positions, recursively walk the tree and
+	// set the renderer context
+	for _, node := range nodeList {
+		setDocumentRendererContext(node, d.renderer)
+	}
+
 	err := resolveNodeRectPositions(d)
 	return err
+}
+
+func setDocumentRendererContext(node *LayoutNode, renderer DocumentRenderer) {
+	node.rendererContext = renderer
+	for _, child := range node.Children {
+		setDocumentRendererContext(child, renderer)
+	}
 }
 
 // PrettyPrintDocumentTree prints the AST of the document with sizing
@@ -127,7 +145,7 @@ func prettyPrintNodeTree(root *LayoutNode, depth int) {
 		result += "\t"
 	}
 
-	result += "LayoutNode (x: %f, y: %f, w: %f, h: %f) {\n"
+	result += "LayoutNode (x: %f, y: %f, w: %f, h: %f, margin: %v, padding: %v) {\n"
 
 	width, err := root.Width.await()
 	if err != nil {
@@ -140,7 +158,7 @@ func prettyPrintNodeTree(root *LayoutNode, depth int) {
 		panic(err)
 	}
 
-	fmt.Printf(result, root.X, root.Y, width, height)
+	fmt.Printf(result, root.X, root.Y, width, height, root.Margin, root.Padding)
 	for _, child := range root.Children {
 		prettyPrintNodeTree(child, depth+1)
 	}

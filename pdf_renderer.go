@@ -103,6 +103,19 @@ func (r *PDFRenderer) Render(document *Document) (result interface{}, err error)
 	return r.pdf, nil
 }
 
+// GetInherentTextRect uses the calculated line height in MM and the underlying
+// FPDF's GetStringWidth function to get the width and height that a text would
+// have if unwrapped using the current font properties.
+func (r *PDFRenderer) GetInherentTextRect(textNode TextNode) Rect {
+	height := textNode.getLineHeightMM()
+	width := r.pdf.GetStringWidth(textNode.Text) + 1
+
+	return Rect{
+		width,
+		height,
+	}
+}
+
 func (r *PDFRenderer) setFillColor(c Color) {
 	r.pdf.SetFillColor(c.r, c.g, c.b)
 }

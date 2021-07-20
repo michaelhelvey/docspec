@@ -79,7 +79,10 @@ func recursiveSetPositions(node *LayoutNode, cursor *resolverCursor) error {
 			// we're starting at the right edge and going down, so to get
 			// the x we need to move the column of children as far over the
 			// parent's draw rect will allow
-			cursor.x += (parentDrawRect.width - childBoundingRect.width)
+			delta := (parentDrawRect.width - childBoundingRect.width)
+			if delta > 0 {
+				cursor.x += delta
+			}
 			break
 		case Center:
 			// we're starting at the top, but the middle of the child node has
@@ -101,7 +104,9 @@ func recursiveSetPositions(node *LayoutNode, cursor *resolverCursor) error {
 			// move the column of children as far down as we can.  This
 			// requires measuing the height of the column.
 			diff := parentDrawRect.height - fullChildrenHeight
-			cursor.y += diff
+			if diff > 0 {
+				cursor.y += diff
+			}
 			break
 		case Center:
 			// the middle of the column of children must be equidistant from
@@ -119,7 +124,9 @@ func recursiveSetPositions(node *LayoutNode, cursor *resolverCursor) error {
 			break
 		case End:
 			diff := parentDrawRect.width - fullChildrenWidth
-			cursor.x += diff
+			if diff > 0 {
+				cursor.x += diff
+			}
 			break
 		case Center:
 			diff := (parentDrawRect.width - fullChildrenWidth) / 2
@@ -134,7 +141,9 @@ func recursiveSetPositions(node *LayoutNode, cursor *resolverCursor) error {
 		case End:
 			childHeight := childBoundingRect.height
 			diff := parentDrawRect.height - childHeight
-			cursor.y += diff
+			if diff > 0 {
+				cursor.y += diff
+			}
 			break
 		case Center:
 			diff := parentDrawRect.height - childBoundingRect.height
@@ -238,7 +247,6 @@ func resolveNodeRectPositions(d *DocumentBuilder) error {
 	}
 
 	for idx, node := range d.nodes {
-		fmt.Printf("new node: x: %f, h: %f\n", cursor.x, cursor.y)
 		node.X = cursor.x + node.Margin.left
 		node.Y = cursor.y + node.Margin.top
 		currentPage.addNode(node)
