@@ -1,5 +1,9 @@
 package docspec
 
+import (
+	"errors"
+)
+
 // ------------------- future data type --------------------------
 
 // identitfyFutureDefinition is a definition for a future that simply returns
@@ -28,6 +32,13 @@ type Future struct {
 	definition futureDefinition
 	params     interface{}
 	node       *LayoutNode
+}
+
+func (f Future) isUnitialized() bool {
+	// only the constructor can set the definition, so we know that if the
+	// future has no definition, then it is not initialized and is just a
+	// "blank"
+	return f.definition == nil
 }
 
 // newIncompleteFuture creates a future from a given functional definition with
@@ -88,60 +99,98 @@ func (f *Future) isKnown() bool {
 // ------------------- common future definitions --------------------------
 
 func heightAsChildren(node *LayoutNode, params interface{}) (Size, error) {
+
+	if len(node.Children) == 1 && node.Children[0].VisualNode != nil {
+		childNode := node.Children[0]
+		// we are dealing with a leaf node that has a visual node with an
+		// inherent size, which we should use if possible
+		switch childNode.VisualNode.(type) {
+		case TextNode:
+			return childNode.rendererContext.GetInherentTextRect(childNode.VisualNode.(TextNode)).height + node.Padding.top + node.Padding.bottom, nil
+		default:
+			return emptySize, errors.New("requested height as children, but reached a leaf node with no inherent height")
+		}
+	}
+
 	if node.ChildFlowDirection == FlowHorizontal {
 		// get the height of the tallest child
 		tallest := 0.0
 		for _, child := range node.Children {
-			height, err := child.Height.await()
+			childBoundingRect, err := child.getBoundingRect()
 			if err != nil {
 				return emptySize, err
 			}
+			height := childBoundingRect.height
 			if height > tallest {
 				tallest = height
 			}
 		}
-		return tallest, nil
+		return tallest + node.Padding.top + node.Padding.bottom, nil
 	}
 	// get the sum of the heights of the children
 	result := emptySize
 	for _, child := range node.Children {
-		height, err := child.Height.await()
+		childBoundingRect, err := child.getBoundingRect()
 		if err != nil {
 			return emptySize, err
 		}
+		height := childBoundingRect.height
 		result += height
 
 	}
-	return result, nil
+	return result + node.Padding.top + node.Padding.bottom, nil
 }
 
 func widthAsChildren(node *LayoutNode, params interface{}) (Size, error) {
+	// in the case that we're dealing with a node that wraps a visual node, we
+	// can handle the case in a special way, because if said node has it's
+	// width defined as widthAsChildren (which we do, since we're in that
+	// function definition), then we need to extract the width and height from
+	// the visual node underlying the first child.  If we don't, then the two
+	// wrapper divs around visual nodes will cause an infinite loop.
+	if len(node.Children) == 1 && node.Children[0].VisualNode != nil {
+		childNode := node.Children[0]
+		// we are dealing with a leaf node that has a visual node with an
+		// inherent size, which we should use if possible
+		switch childNode.VisualNode.(type) {
+		case TextNode:
+			return childNode.rendererContext.GetInherentTextRect(childNode.VisualNode.(TextNode)).width + node.Padding.left + node.Padding.right, nil
+		default:
+			return emptySize, errors.New("requested width as children, but reached a leaf node with no inherent height")
+		}
+	}
+
 	if node.ChildFlowDirection == FlowVertical {
-		// get the width of the widest chil
+		// get the width of the widest child
 		widest := 0.0
 		for _, child := range node.Children {
-			width, err := child.Width.await()
+			childBoundingRect, err := child.getBoundingRect()
 			if err != nil {
 				return emptySize, err
 			}
+			width := childBoundingRect.width
 			if width > widest {
 				widest = width
 			}
 		}
 
-		return widest, nil
+		return widest + node.Padding.left + node.Padding.right, nil
 	}
 	// sums the widths of the children
 	result := emptySize
 	for _, child := range node.Children {
-		width, err := child.Width.await()
+		childBoundingRect, err := child.getBoundingRect()
+		if err != nil {
+			return emptySize, err
+		}
+		width := childBoundingRect.width
 		if err != nil {
 			return emptySize, err
 		}
 		result += width
 
 	}
-	return result, nil
+	return result + node.Padding.left + node.Padding.right, nil
 }
 
 func heightFill(node *LayoutNode, params interface{}) (Size, error) {
@@ -153,12 +202,11 @@ func heightFill(node *LayoutNode, params interface{}) (Size, error) {
 
 	// first attempt to use the parent node
 	if node.Parent != nil {
-		parentDrawRect, err := node.Parent.getDrawRect()
+		h, err := node.Parent.getDrawHeight()
 		if err != nil {
 			return emptySize, err
 		}
-
-		parentHeight = parentDrawRect.height
+		parentHeight = h
 		siblings = node.Parent.Children
 		flowDirection = node.Parent.ChildFlowDirection
 	} else if node.Page != nil {
@@ -269,25 +317,25 @@ func widthPercentage(node *LayoutNode, params interface{}) (Size, error) {
 }
 
 func heightPercentage(node *LayoutNode, params interface{}) (Size, error) {
-	var parentDrawRect Rect
+	var parentDrawHeight Size
 	result := emptySize
 
 	if node.Parent != nil {
-		r, err := node.Parent.getDrawRect()
+		r, err := node.Parent.getDrawHeight()
 		if err != nil {
 			return result, err
 		}
-		parentDrawRect = r
+		parentDrawHeight = r
 	} else if node.Page != nil {
-		parentDrawRect = node.Page.getDrawRect()
+		parentDrawHeight = node.Page.getDrawRect().height
 	}
 
-	if parentDrawRect.height == 0 {
+	if parentDrawHeight == 0 {
 		return result, invariantViolation("orphan node: parent is nil or has height of 0")
 	}
 
 	percentage := params.(Size)
-	result = parentDrawRect.height * (percentage / 100)
+	result = parentDrawHeight * (percentage / 100)
 
 	return result, nil
 }

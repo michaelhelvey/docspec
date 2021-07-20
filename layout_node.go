@@ -38,6 +38,10 @@ type LayoutNode struct {
 	Margin             SizesQuad
 	ChildAlignment     LayoutChildAlignment
 	ChildFlowDirection childFlowDirection
+	// renderContext is set by the DocumentBuilder on each node when it starts
+	// rendering, so that the node can use the renderer to calculate inherent
+	// sizes.
+	rendererContext DocumentRenderer
 }
 
 // Clone returns a pointer to a copy of the original node tree, with all
@@ -99,20 +103,37 @@ func (n LayoutNode) getRenderRect() (Rect, error) {
 // getDrawRect gets the rect into which children of the node must render,
 // defined as the render rect minus the inner padding of the node.
 func (n LayoutNode) getDrawRect() (Rect, error) {
-	width, err := n.Width.await()
+	width, err := n.getDrawWidth()
 	if err != nil {
 		return Rect{}, nil
 	}
 
-	height, err := n.Height.await()
+	height, err := n.getDrawHeight()
 	if err != nil {
 		return Rect{}, nil
+	}
+
+	return Rect{width, height}, nil
+}
+
+func (n LayoutNode) getDrawWidth() (Size, error) {
+	width, err := n.Width.await()
+	if err != nil {
+		return 0.0, nil
 	}
 
 	width -= n.Padding.left + n.Padding.right
-	height -= n.Padding.top + n.Padding.bottom
+	return width, nil
+}
 
-	return Rect{width, height}, nil
+func (n LayoutNode) getDrawHeight() (Size, error) {
+	height, err := n.Height.await()
+	if err != nil {
+		return 0.0, nil
+	}
+
+	height -= n.Padding.top + n.Padding.bottom
+	return height, nil
 }
 
 func (n LayoutNode) log() {

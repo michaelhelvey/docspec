@@ -112,6 +112,45 @@ func DocSpecExample() {
 						)
 					},
 				)
+				docspec.Div(
+					parent,
+					docspec.LayoutNodeProps{
+						Border:             docspec.NewSingletonBooleanQuad(true),
+						Padding:            docspec.NewSingletonSizeQuad(5.0),
+						Width:              docspec.WidthAsChildren(),
+						Height:             docspec.StaticSize(50),
+						ChildFlowDirection: docspec.FlowHorizontal,
+						ChildAlignment:     docspec.LayoutChildAlignment{Horizontal: docspec.End, Vertical: docspec.Start},
+					},
+					func(parent *docspec.LayoutNode) {
+						docspec.Div(
+							parent,
+							docspec.LayoutNodeProps{
+								Border:  docspec.NewSingletonBooleanQuad(true),
+								Padding: docspec.NewSingletonSizeQuad(5.0),
+								Width:   docspec.WidthAsChildren(),
+								Height:  docspec.HeightFill(),
+							},
+							func(parent *docspec.LayoutNode) {
+								docspec.Text(
+									parent,
+									docspec.LayoutNodeProps{
+										Border:      docspec.NewSingletonBooleanQuad(true),
+										BorderColor: docspec.NewColor(0, 255, 0),
+										Padding:     docspec.NewSingletonSizeQuad(5.0),
+										Width:       docspec.WidthAsChildren(),
+										Height:      docspec.HeightAsChildren(),
+									},
+									docspec.TextNode{
+										Text:       `Here is some long text that should have inherent width and height`,
+										FontSize:   12.0,
+										LineHeight: 1.3,
+									},
+								)
+							},
+						)
+					},
+				)
 			},
 		),
 	)
@@ -122,7 +161,7 @@ func DocSpecExample() {
 		panic(err)
 	}
 
-	//builder.PrettyPrintDocumentTree()
+	builder.PrettyPrintDocumentTree()
 	file, err := os.Create("./example/renderer_test.pdf")
 
 	defer file.Close()
