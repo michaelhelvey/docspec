@@ -108,6 +108,7 @@ func (r *PDFRenderer) Render(document *Document) (result interface{}, err error)
 // have if unwrapped using the current font properties.
 func (r *PDFRenderer) GetInherentTextRect(textNode TextNode) Rect {
 	height := textNode.getLineHeightMM()
+	r.setAttributesForTextNode(textNode)
 	width := r.pdf.GetStringWidth(textNode.Text) + 1
 
 	return Rect{
