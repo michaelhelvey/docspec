@@ -22,6 +22,7 @@ import "fmt"
 // is calculated.  Thus the entire document tree is iterated over at least 3
 // times: twice as described above, and then at least once again during rendering.
 type LayoutNode struct {
+	ID                 string
 	Children           []*LayoutNode
 	VisualNode         interface{}
 	Parent             *LayoutNode
@@ -81,6 +82,28 @@ func (n LayoutNode) getBoundingRect() (Rect, error) {
 	height += n.Margin.top + n.Margin.bottom
 
 	return Rect{width, height}, nil
+}
+
+func (n LayoutNode) getBoundingHeight() (Size, error) {
+	height, err := n.Height.await()
+
+	if err != nil {
+		return emptySize, err
+	}
+
+	height += n.Margin.top + n.Margin.bottom
+	return height, nil
+}
+
+func (n LayoutNode) getBoundingWidth() (Size, error) {
+	width, err := n.Width.await()
+
+	if err != nil {
+		return emptySize, err
+	}
+
+	width += n.Margin.left + n.Margin.right
+	return width, nil
 }
 
 // getRenderRect gets the rect into which the node renders.  In other words,
@@ -269,6 +292,7 @@ func CreateNodeList(nodes ...*LayoutNode) []*LayoutNode {
 // LayoutNodeProps is the subset of the properties of the LayoutNode struct
 // which can be passed into node constructors.
 type LayoutNodeProps struct {
+	ID                 string
 	Border             BooleanQuad
 	BorderColor        Color
 	ShowFill           bool
@@ -288,6 +312,7 @@ type LayoutNodeProps struct {
 // manually keeping fields up to date, but using introspection might be even
 // uglier, I'm not sure.  TODO: create a more declarative way of merging props.
 func (n *LayoutNode) mergeProps(props LayoutNodeProps) {
+	n.ID = props.ID
 	n.Border = props.Border
 	n.BorderColor = props.BorderColor
 	n.ShowFill = props.ShowFill

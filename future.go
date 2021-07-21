@@ -2,6 +2,7 @@ package docspec
 
 import (
 	"errors"
+	"fmt"
 )
 
 // ------------------- future data type --------------------------
@@ -116,11 +117,11 @@ func heightAsChildren(node *LayoutNode, params interface{}) (Size, error) {
 		// get the height of the tallest child
 		tallest := 0.0
 		for _, child := range node.Children {
-			childBoundingRect, err := child.getBoundingRect()
+			cH, err := child.getBoundingHeight()
 			if err != nil {
 				return emptySize, err
 			}
-			height := childBoundingRect.height
+			height := cH
 			if height > tallest {
 				tallest = height
 			}
@@ -130,11 +131,11 @@ func heightAsChildren(node *LayoutNode, params interface{}) (Size, error) {
 	// get the sum of the heights of the children
 	result := emptySize
 	for _, child := range node.Children {
-		childBoundingRect, err := child.getBoundingRect()
+		cH, err := child.getBoundingHeight()
 		if err != nil {
 			return emptySize, err
 		}
-		height := childBoundingRect.height
+		height := cH
 		result += height
 
 	}
@@ -164,11 +165,11 @@ func widthAsChildren(node *LayoutNode, params interface{}) (Size, error) {
 		// get the width of the widest child
 		widest := 0.0
 		for _, child := range node.Children {
-			childBoundingRect, err := child.getBoundingRect()
+			cW, err := child.getBoundingWidth()
 			if err != nil {
 				return emptySize, err
 			}
-			width := childBoundingRect.width
+			width := cW
 			if width > widest {
 				widest = width
 			}
@@ -179,11 +180,11 @@ func widthAsChildren(node *LayoutNode, params interface{}) (Size, error) {
 	// sums the widths of the children
 	result := emptySize
 	for _, child := range node.Children {
-		childBoundingRect, err := child.getBoundingRect()
+		cW, err := child.getBoundingWidth()
 		if err != nil {
 			return emptySize, err
 		}
-		width := childBoundingRect.width
+		width := cW
 		if err != nil {
 			return emptySize, err
 		}
@@ -217,7 +218,7 @@ func heightFill(node *LayoutNode, params interface{}) (Size, error) {
 	}
 
 	if parentHeight == emptySize {
-		return result, invariantViolation("orphan node: parent is nil or has height of 0")
+		return result, fmt.Errorf("orphan node(%s): parent has height of 0", node.ID)
 	}
 
 	if flowDirection == FlowHorizontal {
@@ -227,11 +228,11 @@ func heightFill(node *LayoutNode, params interface{}) (Size, error) {
 	siblingHeights := emptySize
 	for _, siblingNode := range siblings {
 		if siblingNode != node {
-			hR, e := siblingNode.getBoundingRect()
+			hR, e := siblingNode.getBoundingHeight()
 			if e != nil {
 				return emptySize, e
 			}
-			siblingHeights += hR.height
+			siblingHeights += hR
 		}
 	}
 
@@ -251,11 +252,11 @@ func widthFill(node *LayoutNode, params interface{}) (Size, error) {
 
 	// first attempt to use the parent node
 	if node.Parent != nil {
-		parentDrawRect, err := node.Parent.getDrawRect()
+		w, err := node.Parent.getDrawWidth()
 		if err != nil {
 			return emptySize, err
 		}
-		parentWidth = parentDrawRect.width
+		parentWidth = w
 		siblings = node.Parent.Children
 		flowDirection = node.Parent.ChildFlowDirection
 	} else if node.Page != nil {
@@ -266,7 +267,7 @@ func widthFill(node *LayoutNode, params interface{}) (Size, error) {
 	}
 
 	if parentWidth == emptySize {
-		return result, invariantViolation("orphan node: parent is nil or has width of 0")
+		return result, fmt.Errorf("orphan node(%s): parent has width of 0", node.ID)
 	}
 
 	if flowDirection == FlowVertical {
@@ -276,11 +277,11 @@ func widthFill(node *LayoutNode, params interface{}) (Size, error) {
 	siblingWidths := emptySize
 	for _, siblingNode := range siblings {
 		if siblingNode != node {
-			wR, e := siblingNode.getBoundingRect()
+			wR, e := siblingNode.getBoundingWidth()
 			if e != nil {
 				return emptySize, e
 			}
-			siblingWidths += wR.width
+			siblingWidths += wR
 		}
 	}
 
@@ -292,26 +293,26 @@ func widthFill(node *LayoutNode, params interface{}) (Size, error) {
 }
 
 func widthPercentage(node *LayoutNode, params interface{}) (Size, error) {
-	var parentDrawRect Rect
+	var parentDrawWidth Size
 	result := emptySize
 
 	if node.Parent != nil {
-		r, err := node.Parent.getDrawRect()
+		r, err := node.Parent.getDrawWidth()
 		if err != nil {
 			return result, err
 		}
 
-		parentDrawRect = r
+		parentDrawWidth = r
 	} else if node.Page != nil {
-		parentDrawRect = node.Page.getDrawRect()
+		parentDrawWidth = node.Page.getDrawRect().width
 	}
 
-	if parentDrawRect.width == 0 {
-		return result, invariantViolation("orphan node: parent is nil or has width of 0")
+	if parentDrawWidth == 0 {
+		return result, fmt.Errorf("orphan node(%s): parent has width of 0", node.ID)
 	}
 
 	percentage := params.(Size)
-	result = parentDrawRect.width * (percentage / 100)
+	result = parentDrawWidth * (percentage / 100)
 
 	return result, nil
 }
@@ -331,7 +332,7 @@ func heightPercentage(node *LayoutNode, params interface{}) (Size, error) {
 	}
 
 	if parentDrawHeight == 0 {
-		return result, invariantViolation("orphan node: parent is nil or has height of 0")
+		return result, fmt.Errorf("orphan node(%s): parent has height of 0", node.ID)
 	}
 
 	percentage := params.(Size)

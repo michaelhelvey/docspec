@@ -3,7 +3,7 @@ package docspec
 import "fmt"
 
 func errMsgPrefix() string {
-	return "[docspec]: "
+	return "[docspec]:"
 }
 
 func invariantViolation(msg string) error {

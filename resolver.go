@@ -246,6 +246,8 @@ func resolveNodeRectPositions(d *DocumentBuilder) error {
 		y: currentPage.Margin.top,
 	}
 
+	// FIXME: the only issue I can think of here is that d.nodes is somehow
+	// being modified as we go through the nodelist
 	for idx, node := range d.nodes {
 		node.X = cursor.x + node.Margin.left
 		node.Y = cursor.y + node.Margin.top
@@ -292,7 +294,6 @@ func resolveNodeRectPositions(d *DocumentBuilder) error {
 				cursor.y = currentPage.Margin.top
 			}
 		}
-
 	}
 
 	return nil

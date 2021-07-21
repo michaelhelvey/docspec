@@ -107,7 +107,7 @@ func (d *DocumentBuilder) CreateDocumentTree(nodeList []*LayoutNode) error {
 	d.nodes = nodeList
 	// before we resolve the node rect positions, recursively walk the tree and
 	// set the renderer context
-	for _, node := range nodeList {
+	for _, node := range d.nodes {
 		setDocumentRendererContext(node, d.renderer)
 	}
 
